@@ -161,6 +161,8 @@ Nel `ClientApp` si implementano in genere due entrypoint:
 Codice della funzione di training:
 
 ```python
+def train(msg: Message, context: Context):
+    """Train the model on local data."""
     # Load the model and initialize it with the received weights
     model = Net()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
@@ -185,7 +187,7 @@ Codice della funzione di training:
     # Construct and return reply Message
     model_record = ArrayRecord(model.state_dict())
     metrics = {
-        "train_loss": train_loss,
+        "train_loss": round(train_loss, 4),
         "num-examples": len(trainloader.dataset),
     }
     metric_record = MetricRecord(metrics)
@@ -196,6 +198,8 @@ Codice della funzione di training:
 Codice della funzione di evaluation:
 
 ```python
+def evaluate(msg: Message, context: Context):
+    """Evaluate the model on local data."""
     # Load the model and initialize it with the received weights
     model = Net()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
@@ -217,8 +221,8 @@ Codice della funzione di evaluation:
 
     # Construct and return reply Message
     metrics = {
-        "eval_loss": eval_loss,
-        "eval_acc": eval_acc,
+        "eval_loss": round(eval_loss, 4),
+        "eval_acc": round(eval_acc * 100, 2),
         "num-examples": len(valloader.dataset),
     }
     metric_record = MetricRecord(metrics)
@@ -238,14 +242,17 @@ Nel `ServerApp`:
 
 Parametri tipici:
 
-- `num-server-rounds`
-- `fraction-train`
-- `fraction-evaluate`
-- `learning-rate`
+- `num-clients`: numero di client da simulare
+- `num-server-rounds`: numero di round federati da eseguire
+- `fraction-train`: frazione di client da coinvolgere in ogni round di training 
+- `fraction-evaluate`: frazione di client da coinvolgere in ogni round di evaluation
+- `learning-rate`: learning rate da inviare ai client per il training locale
 
 Codice completo del metodo principale del `ServerApp`:
 
 ```python
+def main(grid: Grid, context: Context) -> None:
+    """Main entry point for the ServerApp."""
     # Read run config
     fraction_evaluate: float = context.run_config["fraction-evaluate"]
     num_rounds: int = context.run_config["num-server-rounds"]
@@ -256,7 +263,12 @@ Codice completo del metodo principale del `ServerApp`:
     arrays = ArrayRecord(global_model.state_dict())
 
     # Initialize FedAvg strategy
-    strategy = FedAvg(fraction_evaluate=fraction_evaluate)
+    strategy = TrackingFedAvg(
+        fraction_evaluate=fraction_evaluate,
+        min_train_nodes=1,
+        min_evaluate_nodes=1 if fraction_evaluate > 0 else 0,
+        min_available_nodes=max(1, len(list(grid.get_node_ids()))),
+    )
 
     # Start strategy, run FedAvg for `num_rounds`
     result = strategy.start(
@@ -267,10 +279,14 @@ Codice completo del metodo principale del `ServerApp`:
         evaluate_fn=global_evaluate,
     )
 
+    save_metric_plots(strategy, result)
+    print("\nSaved plots to plots/")
+
     # Save final model to disk
     print("\nSaving final model to disk...")
     state_dict = result.arrays.to_torch_state_dict()
     torch.save(state_dict, "final_model.pt")
+
 ```
 
 ## 7. Avvio della simulazione
@@ -288,6 +304,8 @@ Per modificare rapidamente la configurazione a runtime:
 ```bash
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
 ```
+
+Altrimenti modificare `pyproject.toml`
 
 ## 8. Cosa succede dietro le quinte
 

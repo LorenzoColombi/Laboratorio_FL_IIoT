@@ -3,8 +3,7 @@
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context, MetricRecord
 from flwr.serverapp import Grid, ServerApp
-from flwr.serverapp.strategy import FedAvg
-
+from pytorchexample.metrics import TrackingFedAvg, save_metric_plots
 from pytorchexample.task import Net, load_centralized_dataset, test
 
 # Create ServerApp
@@ -33,4 +32,4 @@ def global_evaluate(server_round: int, arrays: ArrayRecord) -> MetricRecord:
     test_loss, test_acc = test(model, test_dataloader, device)
 
     # Return the evaluation metrics
-    return MetricRecord({"accuracy": test_acc, "loss": test_loss})
+    return MetricRecord({"accuracy (%)": round(test_acc * 100, 2), "loss": round(test_loss, 4)})
