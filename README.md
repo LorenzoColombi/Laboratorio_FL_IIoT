@@ -15,25 +15,22 @@ L'obiettivo di questo laboratorio è costruire una piccola applicazione di Feder
 
 ### Obiettivo
 
-Alla fine avrai un sistema federato composto da:
+Alla fine avrai un sistema federato per il riconoscimento delle immagini composto da:
 
 - un `ServerApp` che coordina l'addestramento
 - un `ClientApp` eseguito su più nodi o partizioni
 - una strategia `FedAvg` per aggregare pesi e metriche
 
-## 1. Preparazione del progetto
+### 1. Preparazione del progetto
 
-### Clonazione della repository
+#### Clonazione della repository
 
 ```bash
 git clone <url-della-repository>
 cd Laboratorio_FL_IIoT
 ```
 
-### Creazione e attivazione dell'ambiente virtuale
-
-Dalla root del progetto:
-### 1: Preparazione ambiente
+#### Preparazione ambiente
 
 Creazione ambiente virtuale:
 
@@ -42,13 +39,12 @@ python -m venv flwr-env
 source flwr-env/bin/activate
 ```
 
-### Installazione delle dipendenze principali
+#### Installazione delle dipendenze
 
 ```bash
 pip install -U "flwr[simulation]"
 ```
 
-### Accesso al progetto di esempio
 
 Il codice Flower/PyTorch usato nel laboratorio si trova nella sottocartella `quickstart-pytorch`:
 
@@ -71,8 +67,7 @@ Laboratorio_FL_IIoT/
         └── task.py
 ```
 
-## 2. Dataset CIFAR-10 e partizionamento
-### 2) Dataset CIFAR-10 e partizionamento
+### 2. Dataset CIFAR-10 e partizionamento
 
 Per simulare un contesto cross-silo, CIFAR-10 viene diviso in partizioni, una per client.
 Con `flwr-datasets` è possibile:
@@ -116,8 +111,7 @@ def load_data(partition_id: int, num_partitions: int, batch_size: int):
     return trainloader, testloader
 ```
 
-## 3. Modello e training locale
-### 3) Modello e training locale
+### 3. Modello e training locale
 
 Nel file `task.py` si definiscono:
 
@@ -149,7 +143,7 @@ class Net(nn.Module):
         return self.fc3(x)
 ```
 
-## 4. Concetti base di Flower: `Message` e `Record`
+### 4. Concetti base di Flower: `Message` e `Record`
 
 In Flower, l'intero scambio di informazioni tra server e client avviene tramite l'oggetto `Message`.
 Ogni messaggio trasporta al suo interno un `RecordDict`, una struttura dati flessibile progettata per gestire il payload del training federato.
@@ -163,7 +157,6 @@ All'interno del `RecordDict`, i dati sono categorizzati in tre tipologie princip
 Questo schema standardizza lo scambio dei dati durante i round federati.
 
 ## 5. Client federato (`client_app.py`)
-### 5) Client federato (`client_app.py`)
 
 Nel `ClientApp` si implementano in genere due entrypoint:
 
@@ -332,15 +325,102 @@ Per ogni round, in breve:
 
 Il ciclo continua fino al numero di round impostato.
 
-## 9. Passi successivi consigliati
+## 9. Esercizio opzionale
 
-- personalizzare la strategia federata oltre `FedAvg`
+- personalizzare la strategia di aggregazione oltre `FedAvg`
 - aggiungere metriche custom lato client e lato server
-- introdurre uno scheduler del learning rate per round
-- usare un dataset reale già partizionato per il dominio applicativo
 - passare dalla simulazione locale a un deployment distribuito
 
-## Riferimento ufficiale
+## Esercizio 2: quickstart con Flower + PyTorch
+
+TODO
+
+## Cheasheet rapida Flower
+
+### Creazione e Setup del Progetto
+
+* **`flwr new`**
+    Crea un nuovo progetto Flower interattivo partendo da un template (es. PyTorch, scikit-learn, MLX).
+
+    ```bash
+    flwr new
+    # Oppure specifica direttamente un template per bypassare il menu:
+    flwr new @flwrlabs/quickstart-pytorch
+    ```
+
+* **`flwr config list`**
+    Mostra i profili di connessione (SuperLink) disponibili sul tuo sistema e il percorso in cui è salvato il file di configurazione (`config.toml`).
+
+    ```bash
+    flwr config list
+    ```
+
+### Esecuzione (Run)
+
+Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tuo codice sorgente (nello specifico, dove si trova il file `pyproject.toml`).
+
+- **`flwr run .`**
+    Avvia la tua Flower App nella directory corrente (`.`) utilizzando la connessione di default (solitamente la simulazione locale). Invia il task al motore, restituisce un **RUN_ID** e termina, lasciando il processo in esecuzione in background.
+
+    ```bash
+    flwr run .
+    ```
+
+- **`flwr run . <federation_name>`**
+    Avvia l'app su una specifica infrastruttura (federazione) che hai definito nel tuo `config.toml` (es. un server remoto).
+
+    ```bash
+    flwr run . remote-deployment
+    ```
+
+- **`flwr run . --stream`**
+    Avvia l'app e **mantiene il terminale in ascolto**, stampando i log del ServerApp in tempo reale. Altamente consigliato durante lo sviluppo.
+
+    ```bash
+    flwr run . --stream
+    ```
+
+- **Sovrascrittura delle configurazioni**
+    Se vuoi passare parametri al volo (che sovrascrivono quelli definiti nel `pyproject.toml`):
+
+    ```bash
+    flwr run . --run-config learning_rate=0.01
+    ```
+
+### Monitoraggio (Status & Logs)
+Ogni esecuzione genera un `RUN_ID` univoco. Usa i seguenti comandi per controllare lo stato o i log se hai avviato un processo in background.
+
+- **`flwr ls`**
+    Elenca tutti i run (passati e presenti) sulla federazione di default e il loro stato attuale (es. *pending, starting, running, finished*).
+
+    ```bash
+    flwr ls
+    ```
+
+- **`flwr log <run_id>`**
+    Mostra i log di un run specifico. Di default, la CLI si mette in "stream" e ti mostra i log in tempo reale fino a quando il run non finisce.
+
+    ```bash
+    flwr log 12345678
+    ```
+
+- **`flwr log <run_id> --show`**
+    Stampa l'intero storico dei log del run tutto in una volta ed esce (senza rimanere in streaming).
+
+    ```bash
+    flwr log 12345678 --show
+    ```
+
+### Gestione e Interruzione
+
+- **`flwr stop <run_id>`**
+    Interrompe in modo sicuro un run attualmente in corso, inviando una richiesta di arresto al SuperLink (il nodo centrale).
+
+    ```bash
+    flwr stop 12345678
+    ```
+
+### Riferimento ufficiale
 
 Tutorial originale:
 <https://flower.ai/docs/framework/tutorial-series-get-started-with-flower-pytorch.html>
