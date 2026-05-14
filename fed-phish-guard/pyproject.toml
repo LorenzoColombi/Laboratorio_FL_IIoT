@@ -29,12 +29,13 @@ serverapp = "phishguard.server_app:app"
 clientapp = "phishguard.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 3
-fraction-train = 0.5
-fraction-evaluate = 0.5
-local-epochs = 1
+num-server-rounds = 2 # Number of federated learning rounds
+fraction-train = 0.5 # Fraction of clients used for training in each round
+fraction-evaluate = 0.5 # Fraction of clients used for evaluation in each round
+local-epochs = 1 # Number of local epochs for each client
 learning-rate = 1e-3
 batch-size = 128
+dataset-fraction = 0.2  # Fraction of each partition to use (1.0 = full dataset)
 embed-dim = 64
 num-filters = 128
 dropout = 0.3

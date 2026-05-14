@@ -107,10 +107,7 @@ def load_datasets(dataset_ids: list[str]) -> tuple[list[str], list[int]]:
 
     for dataset_id in dataset_ids:
         if dataset_id not in DATASET_LOADERS:
-            raise ValueError(
-                f"Unknown dataset: {dataset_id}. "
-                f"Supported datasets: {list(DATASET_LOADERS.keys())}"
-            )
+            raise ValueError(f"Unknown dataset: {dataset_id}. " f"Supported datasets: {list(DATASET_LOADERS.keys())}")
         loader = DATASET_LOADERS[dataset_id]
         urls, labels = loader()
         all_urls.extend(urls)
@@ -165,9 +162,7 @@ def url_to_indices(url: str, byte2idx: dict, max_len: int = 256) -> list[int]:
 class PhishingURLDataset(TorchDataset):
     """PyTorch Dataset for phishing URL classification."""
 
-    def __init__(
-        self, urls: list[str], labels: list[int], char2idx: dict, max_len: int = 256
-    ):
+    def __init__(self, urls: list[str], labels: list[int], char2idx: dict, max_len: int = 256):
         self.urls = urls
         self.labels = labels
         self.char2idx = char2idx
@@ -274,9 +269,7 @@ def get_class_weights(labels: list[int], device: Optional[torch.device] = None):
     return pos_weight
 
 
-def preprocess_dataset(
-    dataset: HFDataset, test_size: float = 0.1, val_size: float = 0.1, seed: int = 42
-):
+def preprocess_dataset(dataset: HFDataset, test_size: float = 0.1, val_size: float = 0.1, seed: int = 42):
     """Preprocess the dataset: deduplicate, split, and compute statistics."""
 
     # Faster/idiomatic for HF Datasets
@@ -304,9 +297,7 @@ def preprocess_dataset(
         raise ValueError("Need at least 2 classes for stratified splitting.")
     class_counts = {c: labels.count(c) for c in set(labels)}
     if min(class_counts.values()) < 2:
-        raise ValueError(
-            f"Not enough samples per class after deduplication: {class_counts}"
-        )
+        raise ValueError(f"Not enough samples per class after deduplication: {class_counts}")
 
     # First split: train+val vs test
     train_val_urls, test_urls, train_val_labels, test_labels = train_test_split(
@@ -369,6 +360,7 @@ def load_sim_data(
     batch_size: int,
     device: torch.device,
     dataset_ids: list[str] | None = None,
+    fraction: float = 1.0,
 ):
     """Load partition data for federated simulation.
 
@@ -432,11 +424,12 @@ def load_sim_data(
     # Depending on flwr_datasets version, partition may be a DatasetDict with a "train" split
     hf_ds = (
         partition["train"]
-        if isinstance(partition, dict)
-        or hasattr(partition, "keys")
-        and "train" in partition
+        if isinstance(partition, dict) or hasattr(partition, "keys") and "train" in partition
         else partition
     )
+
+    if fraction < 1.0:
+        hf_ds = hf_ds.shuffle(seed=42).select(range(int(len(hf_ds) * fraction)))
 
     return _make_loaders(hf_ds, batch_size, device)
 

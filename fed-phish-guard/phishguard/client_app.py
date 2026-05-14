@@ -34,16 +34,14 @@ def _load_data(context: Context, batch_size: int, device: torch.device):
     datasets_str = context.run_config.get("datasets", "ealvaradob/phishing-dataset")
     dataset_ids = [d.strip() for d in datasets_str.split(",")]
 
-    if (
-        "partition-id" in context.node_config
-        and "num-partitions" in context.node_config
-    ):
+    if "partition-id" in context.node_config and "num-partitions" in context.node_config:
         return load_sim_data(
             context.node_config["partition-id"],
             context.node_config["num-partitions"],
             batch_size,
             device,
             dataset_ids=dataset_ids,
+            fraction=context.run_config.get("dataset-fraction", 1.0),
         )
     return load_local_data(context.node_config["data-path"], batch_size, device)
 
@@ -51,12 +49,10 @@ def _load_data(context: Context, batch_size: int, device: torch.device):
 @app.train()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
-    # TODO: complete this function by copying the implementation from the README.
-    raise NotImplementedError("Complete ClientApp train for exercise 2")
+    # TODO
 
 
 @app.evaluate()
 def evaluate(msg: Message, context: Context):
     """Evaluate the model on local data."""
-    # TODO: complete this function by copying the implementation from the README.
-    raise NotImplementedError("Complete ClientApp evaluate for exercise 2")
+    # TODO
