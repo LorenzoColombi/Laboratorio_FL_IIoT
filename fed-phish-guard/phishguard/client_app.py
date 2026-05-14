@@ -51,48 +51,12 @@ def _load_data(context: Context, batch_size: int, device: torch.device):
 @app.train()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
-    model, device = _load_model(msg, context)
-    batch_size = context.run_config["batch-size"]
-    trainloader, valloader, _, pos_weight = _load_data(context, batch_size, device)
-
-    history, _ = train_fn(
-        model,
-        trainloader,
-        valloader,
-        pos_weight,
-        lr=context.run_config["learning-rate"],
-        device=device,
-        num_epochs=context.run_config["local-epochs"],
-    )
-
-    summary = summarize_history(history)
-    model_record = ArrayRecord(model.state_dict())
-    metrics = {
-        "train_loss": summary["avg_train_loss"],
-        "val_loss": summary["avg_val_loss"],
-        "val_f1": summary["avg_val_f1"],
-        "num-examples": len(trainloader.dataset),
-    }
-    metric_record = MetricRecord(metrics)
-    content = RecordDict({"arrays": model_record, "metrics": metric_record})
-    return Message(content=content, reply_to=msg)
+    # TODO: complete this function by copying the implementation from the README.
+    raise NotImplementedError("Complete ClientApp train for exercise 2")
 
 
 @app.evaluate()
 def evaluate(msg: Message, context: Context):
     """Evaluate the model on local data."""
-    model, device = _load_model(msg, context)
-    batch_size = context.run_config["batch-size"]
-    _, _, testloader, pos_weight = _load_data(context, batch_size, device)
-
-    eval_metrics, _, _ = eval_fn(model, testloader, pos_weight, device)
-
-    metrics = {
-        "eval_loss": eval_metrics["loss"],
-        "eval_acc": eval_metrics["accuracy"],
-        "eval_f1": eval_metrics["f1"],
-        "num-examples": len(testloader.dataset),
-    }
-    metric_record = MetricRecord(metrics)
-    content = RecordDict({"metrics": metric_record})
-    return Message(content=content, reply_to=msg)
+    # TODO: complete this function by copying the implementation from the README.
+    raise NotImplementedError("Complete ClientApp evaluate for exercise 2")

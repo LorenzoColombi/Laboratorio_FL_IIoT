@@ -1,8 +1,8 @@
 # Laboratorio di Federated Learning per IIoT
 
-README per il laboratorio di Federated Learning per IIoT del corso di Industrial Internet of Things (Università di Ferrara) a.a. 2025-2026. Questo README contiene 2 esercizi. Il primo è un quickstart (molto guidato) con il framework Flower, utilizzando PyTorch e il dataset CIFAR-10.
+README per il laboratorio di Federated Learning per IIoT del corso di Industrial Internet of Things (Università di Ferrara) a.a. 2025-2026. Questo README contiene 2 esercizi. Il primo è un quickstart molto guidato con Flower, PyTorch e CIFAR-10; il secondo applica la stessa struttura al progetto `fed-phish-guard` per il rilevamento federato di URL di phishing.
 
-Il secondo TODO
+Entrambi gli esercizi mostrano la divisione tra `ServerApp`, `ClientApp`, configurazione dell'app e configurazione globale Flower.
 
 ## Esercizio 1: quickstart con Flower + PyTorch
 
@@ -159,10 +159,11 @@ All'interno del `RecordDict`, i dati sono categorizzati in tre tipologie princip
 
 Questo schema standardizza lo scambio dei dati durante i round federati.
 
-I parametri di configurazione (come il numero di round, la dimensione del batch o il dataset selezionato) sono gestiti in modo centralizzato. Possiamo configurare i parametri di default all'interno del file `pyproject.toml` e sovrascriverli dinamicamente da terminale al momento dell'esecuzione, senza dover modificare il codice sorgente.
+I parametri di configurazione dell'app sono gestiti in modo centralizzato nel file `pyproject.toml`. La sezione `[tool.flwr.app.config]` contiene i parametri letti dal codice dell'app, come numero di round, epoche locali, learning rate e batch size. Le impostazioni di connessione e simulazione Flower, come il numero di client simulati, sono invece nella Flower config globale (`~/.flwr/config.toml`).
 
-1. **Valori di Default (`pyproject.toml`):** Tutti i parametri base sono dichiarati all'interno del file `pyproject.toml` nella sezione `[tool.flwr.app.config]`. 
-2. **Sovrascrittura da Terminale:** Quando avvii un esperimento, puoi sovrascrivere questi default dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
+1. **Valori di default dell'app (`pyproject.toml`):** I parametri usati da `context.run_config` sono dichiarati nella sezione `[tool.flwr.app.config]`.
+2. **Configurazione della simulazione locale:** Il numero di client simulati si imposta con `options.num-supernodes` nella connessione `local-simulation` della Flower config globale.
+3. **Sovrascrittura da terminale:** Quando avvii un esperimento, puoi sovrascrivere i default dell'app dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
 
 ```bash
    flwr run . --run-config "num-server-rounds=20 batch-size=64"
@@ -257,13 +258,14 @@ Nel `ServerApp`:
 4. avvii `strategy.start(...)`
 5. salvi il modello finale su disco
 
-Parametri tipici:
+Configurazione usata in questo progetto:
 
-- `num-clients`: numero di client da simulare
+- `options.num-supernodes`: numero di client simulati dalla connessione Flower `local-simulation`, configurata nella Flower config globale
 - `num-server-rounds`: numero di round federati da eseguire
-- `fraction-train`: frazione di client da coinvolgere in ogni round di training 
 - `fraction-evaluate`: frazione di client da coinvolgere in ogni round di evaluation
+- `local-epochs`: numero di epoche locali per ogni client selezionato
 - `learning-rate`: learning rate da inviare ai client per il training locale
+- `batch-size`: dimensione dei batch locali
 
 Codice completo del metodo principale del `ServerApp`:
 
@@ -322,9 +324,50 @@ Per modificare rapidamente la configurazione a runtime:
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
 ```
 
-Altrimenti modificare `pyproject.toml`
+Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, aggiorna `options.num-supernodes` nella Flower config globale (`~/.flwr/config.toml`), sotto la connessione `local-simulation`.
 
-## 8. Cosa succede dietro le quinte
+## 8. Configurazione globale Flower
+
+Flower salva le configurazioni globali delle connessioni SuperLink nel file `~/.flwr/config.toml`. Queste impostazioni non fanno parte del progetto e valgono per l'ambiente dell'utente che esegue il comando.
+
+Per vedere dove si trova il file e quali connessioni sono disponibili:
+
+```bash
+flwr config list
+```
+
+Nel nostro caso la connessione di default è `local-simulation`, configurata così:
+
+```toml
+[superlink]
+default = "local-simulation"
+
+[superlink.local-simulation]
+address = ":local:"
+options.num-supernodes = 8
+```
+
+Per cambiare il numero di client simulati, modifica il valore:
+
+```toml
+options.num-supernodes = 8
+```
+
+Ad esempio, per simulare 12 client:
+
+```toml
+options.num-supernodes = 12
+```
+
+Dopo la modifica, riesegui normalmente:
+
+```bash
+flwr run . --stream
+```
+
+I parametri passati con `--run-config`, come `num-server-rounds`, `local-epochs` o `batch-size`, continuano invece a sovrascrivere solo i valori definiti in `[tool.flwr.app.config]` nel `pyproject.toml`.
+
+## 9. Cosa succede dietro le quinte
 
 Per ogni round, in breve:
 
@@ -337,7 +380,7 @@ Per ogni round, in breve:
 
 Il ciclo continua fino al numero di round impostato.
 
-## 9. Esercizio opzionale
+## 10. Esercizio opzionale
 
 - personalizzare la strategia di aggregazione oltre `FedAvg`
 - aggiungere metriche custom lato client e lato server
@@ -345,9 +388,135 @@ Il ciclo continua fino al numero di round impostato.
 
 ## Esercizio 2: quickstart con Flower + PyTorch
 
-TODO
+In questo secondo esercizio applichiamo la stessa struttura del quickstart precedente a un caso leggermente più realistico: il progetto `fed-phish-guard`, che addestra un modello PyTorch per classificare URL di phishing in modo federato.
 
-## Cheasheet rapida Flower
+L'obiettivo non è riscrivere tutta l'applicazione, ma riconoscere gli stessi blocchi Flower già visti:
+
+- un `ServerApp`, che inizializza il modello globale e avvia la strategia federata
+- un `ClientApp`, che riceve i pesi globali, addestra localmente e restituisce metriche
+- una configurazione in `pyproject.toml`, che definisce round, frazioni di client, iperparametri e dataset
+
+La differenza principale rispetto al primo esercizio è il dominio: non lavoriamo più su immagini CIFAR-10, ma su URL trasformati in sequenze numeriche e classificati con una CNN testuale.
+
+### Server federato (`fed-phish-guard/phishguard/server_app.py`)
+
+Nel server leggiamo la configurazione dell'esperimento, costruiamo il modello globale `PhishingCNN`, inizializziamo `FedAvg` e lanciamo i round federati.
+
+```python
+@app.main()
+def main(grid: Grid, context: Context) -> None:
+    """Main entry point for the ServerApp."""
+
+    # Read run config
+    fraction_train: float = context.run_config["fraction-train"]
+    fraction_evaluate: float = context.run_config["fraction-evaluate"]
+    num_rounds: int = context.run_config["num-server-rounds"]
+    embed_dim = context.run_config["embed-dim"]
+    num_filters = context.run_config["num-filters"]
+    dropout = context.run_config["dropout"]
+
+    # Load global model
+    global_model = PhishingCNN(
+        vocab_size=VOCAB_SIZE,
+        embed_dim=embed_dim,
+        num_filters=num_filters,
+        dropout=dropout,
+    )
+    arrays = ArrayRecord(global_model.state_dict())
+
+    # Initialize FedAvg strategy
+    strategy = FedAvg(
+        fraction_evaluate=fraction_evaluate,
+        fraction_train=fraction_train,
+    )
+
+    # Start strategy, run FedAvg for `num_rounds`
+    result = strategy.start(
+        grid=grid,
+        initial_arrays=arrays,
+        num_rounds=num_rounds,
+    )
+
+    # Save final model to disk
+    print("\nSaving final model to disk...")
+    state_dict = result.arrays.to_torch_state_dict()
+    torch.save(state_dict, "final_model.pt")
+```
+
+### Client federato (`fed-phish-guard/phishguard/client_app.py`)
+
+Nel client troviamo di nuovo due entrypoint Flower:
+
+- `@app.train()`: addestra il modello sui dati locali e restituisce pesi aggiornati
+- `@app.evaluate()`: valuta il modello sui dati locali e restituisce metriche
+
+```python
+@app.train()
+def train(msg: Message, context: Context):
+    """Train the model on local data."""
+    model, device = _load_model(msg, context)
+    batch_size = context.run_config["batch-size"]
+    trainloader, valloader, _, pos_weight = _load_data(context, batch_size, device)
+
+    history, _ = train_fn(
+        model,
+        trainloader,
+        valloader,
+        pos_weight,
+        lr=context.run_config["learning-rate"],
+        device=device,
+        num_epochs=context.run_config["local-epochs"],
+    )
+
+    summary = summarize_history(history)
+    model_record = ArrayRecord(model.state_dict())
+    metrics = {
+        "train_loss": summary["avg_train_loss"],
+        "val_loss": summary["avg_val_loss"],
+        "val_f1": summary["avg_val_f1"],
+        "num-examples": len(trainloader.dataset),
+    }
+    metric_record = MetricRecord(metrics)
+    content = RecordDict({"arrays": model_record, "metrics": metric_record})
+    return Message(content=content, reply_to=msg)
+
+
+@app.evaluate()
+def evaluate(msg: Message, context: Context):
+    """Evaluate the model on local data."""
+    model, device = _load_model(msg, context)
+    batch_size = context.run_config["batch-size"]
+    _, _, testloader, pos_weight = _load_data(context, batch_size, device)
+
+    eval_metrics, _, _ = eval_fn(model, testloader, pos_weight, device)
+
+    metrics = {
+        "eval_loss": eval_metrics["loss"],
+        "eval_acc": eval_metrics["accuracy"],
+        "eval_f1": eval_metrics["f1"],
+        "num-examples": len(testloader.dataset),
+    }
+    metric_record = MetricRecord(metrics)
+    content = RecordDict({"metrics": metric_record})
+    return Message(content=content, reply_to=msg)
+```
+
+Le funzioni di supporto `_load_model` e `_load_data` sono definite nello stesso file. La prima ricostruisce il modello usando gli iperparametri della run config, la seconda sceglie se caricare dati partizionati per simulazione oppure dati locali per un deployment reale.
+
+Per eseguire l'esercizio:
+
+```bash
+cd fed-phish-guard
+flwr run . --stream
+```
+
+Puoi modificare i parametri dell'esperimento al volo, ad esempio:
+
+```bash
+flwr run . --stream --run-config "num-server-rounds=5 local-epochs=2 fraction-train=0.75"
+```
+
+## Cheasheet Flower
 
 ### Creazione e Setup del Progetto
 
@@ -396,7 +565,7 @@ Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tu
     Se vuoi passare parametri al volo (che sovrascrivono quelli definiti nel `pyproject.toml`):
 
     ```bash
-    flwr run . --run-config learning_rate=0.01
+    flwr run . --run-config "learning-rate=0.01"
     ```
 
 ### Monitoraggio (Status & Logs)
