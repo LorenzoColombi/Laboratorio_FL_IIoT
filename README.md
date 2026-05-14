@@ -39,17 +39,20 @@ python -m venv flwr-env
 source flwr-env/bin/activate
 ```
 
-#### Installazione delle dipendenze
+#### Installazione FLower
 
 ```bash
 pip install -U "flwr[simulation]"
+
 ```
 
+#### Installazione dipendenze progetto
 
-Il codice Flower/PyTorch usato nel laboratorio si trova nella sottocartella `quickstart-pytorch`:
+Il codice Flower/PyTorch usato nel laboratorio si trova nella sottocartella `quickstart-pytorch`. Subito dopo bisogna installare le dipendenze specifiche del progetto:
 
 ```bash
 cd quickstart-pytorch
+pip install -e .
 ```
 
 Struttura del progetto:
@@ -143,7 +146,7 @@ class Net(nn.Module):
         return self.fc3(x)
 ```
 
-### 4. Concetti base di Flower: `Message` e `Record`
+### 4. Concetti base di Flower e configurazione: `Message` e `Record`
 
 In Flower, l'intero scambio di informazioni tra server e client avviene tramite l'oggetto `Message`.
 Ogni messaggio trasporta al suo interno un `RecordDict`, una struttura dati flessibile progettata per gestire il payload del training federato.
@@ -155,6 +158,15 @@ All'interno del `RecordDict`, i dati sono categorizzati in tre tipologie princip
 - **`ConfigRecord`**: contiene i parametri di configurazione che il server invia ai client, ad esempio *learning rate*, *batch size* e numero di epoche locali
 
 Questo schema standardizza lo scambio dei dati durante i round federati.
+
+I parametri di configurazione (come il numero di round, la dimensione del batch o il dataset selezionato) sono gestiti in modo centralizzato. Possiamo configurare i parametri di default all'interno del file `pyproject.toml` e sovrascriverli dinamicamente da terminale al momento dell'esecuzione, senza dover modificare il codice sorgente.
+
+1. **Valori di Default (`pyproject.toml`):** Tutti i parametri base sono dichiarati all'interno del file `pyproject.toml` nella sezione `[tool.flwr.app.config]`. 
+2. **Sovrascrittura da Terminale:** Quando avvii un esperimento, puoi sovrascrivere questi default dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
+
+```bash
+   flwr run . --run-config "num-server-rounds=20 batch-size=64"
+```
 
 ## 5. Client federato (`client_app.py`)
 
@@ -388,6 +400,7 @@ Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tu
     ```
 
 ### Monitoraggio (Status & Logs)
+
 Ogni esecuzione genera un `RUN_ID` univoco. Usa i seguenti comandi per controllare lo stato o i log se hai avviato un processo in background.
 
 - **`flwr ls`**
