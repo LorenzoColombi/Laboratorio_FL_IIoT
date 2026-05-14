@@ -20,16 +20,12 @@ packages = ["."]
 
 [tool.flwr.app]
 publisher = "flwrlabs"
-# [tool.flwr.federations]
-# default = "local-simulation"
-
 
 [tool.flwr.app.components]
 serverapp = "pytorchexample.server_app:app"
 clientapp = "pytorchexample.client_app:app"
 
 [tool.flwr.app.config]
-num-clients = 8 # Number of clients to simulate
 num-server-rounds = 3 # Number of rounds of federated learning
 fraction-evaluate = 1 # Evaluate all clients every round
 local-epochs = 4 # Number of local epochs to train on each client per round

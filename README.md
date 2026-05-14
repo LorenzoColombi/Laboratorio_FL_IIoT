@@ -39,7 +39,7 @@ python -m venv flwr-env
 source flwr-env/bin/activate
 ```
 
-#### Installazione FLower
+#### Installazione Flower
 
 ```bash
 pip install -U "flwr[simulation]"
@@ -75,7 +75,7 @@ Laboratorio_FL_IIoT/
 Per simulare un contesto cross-silo, CIFAR-10 viene diviso in partizioni, una per client.
 Con `flwr-datasets` è possibile:
 
-- definire un partizionatore IID, ad esempio con 10 partizioni
+- definire un partizionatore IID, una partizione per client simulato
 - caricare la partizione assegnata al client corrente
 - dividere localmente i dati in train e validation
 - applicare trasformazioni PyTorch
@@ -503,10 +503,25 @@ def evaluate(msg: Message, context: Context):
 
 Le funzioni di supporto `_load_model` e `_load_data` sono definite nello stesso file. La prima ricostruisce il modello usando gli iperparametri della run config, la seconda sceglie se caricare dati partizionati per simulazione oppure dati locali per un deployment reale.
 
-Per eseguire l'esercizio:
+Prima di eseguire l'esercizio, copia i blocchi mostrati sopra nei TODO di `fed-phish-guard/phishguard/server_app.py` e `fed-phish-guard/phishguard/client_app.py`.
+
+Poi installa le dipendenze del secondo progetto. Dalla root della repository:
 
 ```bash
 cd fed-phish-guard
+pip install -e .
+```
+
+Se sei ancora nella cartella `quickstart-pytorch` dell'esercizio precedente, usa invece:
+
+```bash
+cd ../fed-phish-guard
+pip install -e .
+```
+
+Infine avvia la simulazione:
+
+```bash
 flwr run . --stream
 ```
 
@@ -516,7 +531,7 @@ Puoi modificare i parametri dell'esperimento al volo, ad esempio:
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=2 fraction-train=0.75"
 ```
 
-## Cheasheet Flower
+## Cheatsheet Flower
 
 ### Creazione e Setup del Progetto
 
@@ -547,11 +562,11 @@ Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tu
     flwr run .
     ```
 
-- **`flwr run . <federation_name>`**
-    Avvia l'app su una specifica infrastruttura (federazione) che hai definito nel tuo `config.toml` (es. un server remoto).
+- **`flwr run . <superlink_name>`**
+    Avvia l'app usando una specifica connessione SuperLink definita nella Flower config globale (`~/.flwr/config.toml`). Se ometti questo argomento, Flower usa la connessione di default.
 
     ```bash
-    flwr run . remote-deployment
+    flwr run . local-simulation
     ```
 
 - **`flwr run . --stream`**

@@ -29,7 +29,6 @@ serverapp = "phishguard.server_app:app"
 clientapp = "phishguard.client_app:app"
 
 [tool.flwr.app.config]
-num-clients = 8 # Number of clients to simulate
 num-server-rounds = 3
 fraction-train = 0.5
 fraction-evaluate = 0.5

@@ -30,3 +30,5 @@ final_model.pt
 
 # File specifici del progetto
 quickstart-pytorch/pytorchexample/__pycache__/
+
+*.png
