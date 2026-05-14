@@ -16,6 +16,7 @@ app = ClientApp()
 @app.train()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
+    # Load the model and initialize it with the received weights
     TODO
 
 
