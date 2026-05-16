@@ -308,25 +308,7 @@ def main(grid: Grid, context: Context) -> None:
 
 ```
 
-## 7. Avvio della simulazione
-
-Una volta attivato l'ambiente e raggiunta la cartella `quickstart-pytorch`, esegui:
-
-```bash
-flwr run . --stream
-```
-
-Vedrai i round federati con campionamento client, aggregazione del training, aggregazione della evaluation e metriche aggregate.
-
-Per modificare rapidamente la configurazione a runtime:
-
-```bash
-flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
-```
-
-Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, usa la configurazione della Simulation Runtime descritta nella sezione successiva.
-
-## 8. Configurazione globale Flower
+## 7. Configurazione globale Flower
 
 Flower permette di configurare in modo permanente la Simulation Runtime del SuperLink locale. Questa configurazione non fa parte del progetto e vale per l'ambiente dell'utente che esegue i comandi.
 
@@ -381,6 +363,25 @@ flwr run . --stream --federation-config="num-supernodes=256 client-resources-num
 
 I parametri passati con `--run-config`, come `num-server-rounds`, `local-epochs` o `batch-size`, continuano invece a sovrascrivere solo i valori definiti in `[tool.flwr.app.config]` nel `pyproject.toml`.
 
+## 8. Avvio della simulazione
+
+Una volta attivato l'ambiente e raggiunta la cartella `quickstart-pytorch`, esegui:
+
+```bash
+flwr run . --stream
+```
+
+Vedrai i round federati con campionamento client, aggregazione del training, aggregazione della evaluation e metriche aggregate.
+
+Per modificare rapidamente la configurazione a runtime:
+
+```bash
+flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
+```
+
+Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, usa la configurazione della Simulation Runtime descritta nella sezione successiva.
+
+
 ## 9. Cosa succede dietro le quinte
 
 Per ogni round, in breve:
@@ -411,7 +412,9 @@ Durante una run Flower compaiono metriche raccolte in momenti diversi del ciclo 
 ## Esercizio 2: quickstart con Flower + PyTorch
 
 In questo secondo esercizio applichiamo la stessa struttura del quickstart precedente a un caso leggermente più realistico: il progetto `fed-phish-guard`, che addestra un modello PyTorch per classificare URL di phishing in modo federato.
-Per eseguirlo più velocemente usiamo solo un 20% del dataset
+Per eseguirlo più velocemente usiamo solo un 20% del dataset.
+
+### 1. Obiettivo
 
 L'obiettivo non è riscrivere tutta l'applicazione, ma riconoscere gli stessi blocchi Flower già visti:
 
@@ -421,7 +424,7 @@ L'obiettivo non è riscrivere tutta l'applicazione, ma riconoscere gli stessi bl
 
 La differenza principale rispetto al primo esercizio è il dominio: non lavoriamo più su immagini CIFAR-10, ma su URL trasformati in sequenze numeriche e classificati con una CNN testuale.
 
-### Server federato (`fed-phish-guard/phishguard/server_app.py`)
+### 2. Server federato (`fed-phish-guard/phishguard/server_app.py`)
 
 Nel server leggiamo la configurazione dell'esperimento, costruiamo il modello globale `PhishingCNN`, inizializziamo `FedAvg` e lanciamo i round federati.
 
@@ -466,7 +469,7 @@ def main(grid: Grid, context: Context) -> None:
     torch.save(state_dict, "final_model.pt")
 ```
 
-### Client federato (`fed-phish-guard/phishguard/client_app.py`)
+### 3. Client federato (`fed-phish-guard/phishguard/client_app.py`)
 
 Nel client troviamo di nuovo due entrypoint Flower:
 
@@ -526,6 +529,8 @@ def evaluate(msg: Message, context: Context):
 
 Le funzioni di supporto `_load_model` e `_load_data` sono definite nello stesso file. La prima ricostruisce il modello usando gli iperparametri della run config, la seconda sceglie se caricare dati partizionati per simulazione oppure dati locali per un deployment reale.
 
+### 4. Completamento ed esecuzione
+
 Prima di eseguire l'esercizio, copia i blocchi mostrati sopra nei TODO di `fed-phish-guard/phishguard/server_app.py` e `fed-phish-guard/phishguard/client_app.py`.
 
 Poi installa le dipendenze del secondo progetto. Dalla root della repository:
@@ -534,7 +539,6 @@ Poi installa le dipendenze del secondo progetto. Dalla root della repository:
 cd fed-phish-guard
 pip install -e .
 ```
-
 
 Infine avvia la simulazione:
 
