@@ -411,6 +411,7 @@ Durante una run Flower compaiono metriche raccolte in momenti diversi del ciclo 
 ## Esercizio 2: quickstart con Flower + PyTorch
 
 In questo secondo esercizio applichiamo la stessa struttura del quickstart precedente a un caso leggermente più realistico: il progetto `fed-phish-guard`, che addestra un modello PyTorch per classificare URL di phishing in modo federato.
+Per eseguirlo più velocemente usiamo solo un 20% del dataset
 
 L'obiettivo non è riscrivere tutta l'applicazione, ma riconoscere gli stessi blocchi Flower già visti:
 
@@ -534,12 +535,6 @@ cd fed-phish-guard
 pip install -e .
 ```
 
-Se sei ancora nella cartella `quickstart-pytorch` dell'esercizio precedente, usa invece:
-
-```bash
-cd ../fed-phish-guard
-pip install -e .
-```
 
 Infine avvia la simulazione:
 
