@@ -159,10 +159,10 @@ All'interno del `RecordDict`, i dati sono categorizzati in tre tipologie princip
 
 Questo schema standardizza lo scambio dei dati durante i round federati.
 
-I parametri di configurazione dell'app sono gestiti in modo centralizzato nel file `pyproject.toml`. La sezione `[tool.flwr.app.config]` contiene i parametri letti dal codice dell'app, come numero di round, epoche locali, learning rate e batch size. Le impostazioni di connessione e simulazione Flower, come il numero di client simulati, sono invece nella Flower config globale (`~/.flwr/config.toml`).
+I parametri di configurazione dell'app sono gestiti in modo centralizzato nel file `pyproject.toml`. La sezione `[tool.flwr.app.config]` contiene i parametri letti dal codice dell'app, come numero di round, epoche locali, learning rate e batch size. La configurazione della Simulation Runtime di Flower, come il numero di client simulati, si gestisce invece con la CLI Flower.
 
 1. **Valori di default dell'app (`pyproject.toml`):** I parametri usati da `context.run_config` sono dichiarati nella sezione `[tool.flwr.app.config]`.
-2. **Configurazione della simulazione locale:** Il numero di client simulati si imposta con `options.num-supernodes` nella connessione `local-simulation` della Flower config globale.
+2. **Configurazione della Simulation Runtime:** Il numero di client simulati si imposta con `flwr federation simulation-config --num-supernodes ...`.
 3. **Sovrascrittura da terminale:** Quando avvii un esperimento, puoi sovrascrivere i default dell'app dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
 
 ```bash
@@ -260,7 +260,7 @@ Nel `ServerApp`:
 
 Configurazione usata in questo progetto:
 
-- `options.num-supernodes`: numero di client simulati dalla connessione Flower `local-simulation`, configurata nella Flower config globale
+- `num-supernodes`: numero di SuperNodes, cioè client simulati dalla Simulation Runtime Flower
 - `num-server-rounds`: numero di round federati da eseguire
 - `fraction-evaluate`: frazione di client da coinvolgere in ogni round di evaluation
 - `local-epochs`: numero di epoche locali per ogni client selezionato
@@ -324,45 +324,59 @@ Per modificare rapidamente la configurazione a runtime:
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
 ```
 
-Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, aggiorna `options.num-supernodes` nella Flower config globale (`~/.flwr/config.toml`), sotto la connessione `local-simulation`.
+Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, usa la configurazione della Simulation Runtime descritta nella sezione successiva.
 
 ## 8. Configurazione globale Flower
 
-Flower salva le configurazioni globali delle connessioni SuperLink nel file `~/.flwr/config.toml`. Queste impostazioni non fanno parte del progetto e valgono per l'ambiente dell'utente che esegue il comando.
+Flower permette di configurare in modo permanente la Simulation Runtime del SuperLink locale. Questa configurazione non fa parte del progetto e vale per l'ambiente dell'utente che esegue i comandi.
 
-Per vedere dove si trova il file e quali connessioni sono disponibili:
+Per vedere le connessioni SuperLink disponibili e il percorso del file di configurazione globale:
 
 ```bash
 flwr config list
 ```
 
-Nel nostro caso la connessione di default è `local-simulation`, configurata così:
+### Configurazione permanente
 
-```toml
-[superlink]
-default = "local-simulation"
+Per impostare in modo permanente il numero di client simulati, usa `flwr federation simulation-config`.
 
-[superlink.local-simulation]
-address = ":local:"
-options.num-supernodes = 8
-```
-
-Per cambiare il numero di client simulati, modifica il valore:
-
-```toml
-options.num-supernodes = 8
-```
-
-Ad esempio, per simulare 12 client:
-
-```toml
-options.num-supernodes = 12
-```
-
-Dopo la modifica, riesegui normalmente:
+Ad esempio, per usare 8 SuperNodes, quindi 8 client simulati:
 
 ```bash
-flwr run . --stream
+flwr federation simulation-config --num-supernodes 8
+```
+
+Da quel momento, tutte le run successive useranno questa configurazione come default.
+
+Puoi configurare anche le risorse assegnate a ogni `ClientApp`. Ad esempio, per usare 100 SuperNodes, 4 CPU per client e il 25% di una GPU per client:
+
+```bash
+flwr federation simulation-config \
+    --num-supernodes 100 \
+    --client-resources-num-cpus 4 \
+    --client-resources-num-gpus 0.25
+```
+
+Per vedere tutte le opzioni disponibili:
+
+```bash
+flwr federation simulation-config --help
+```
+
+### Override per singola run
+
+Se vuoi cambiare la configurazione solo per una run, usa `--federation-config` con `flwr run`.
+
+Ad esempio, per eseguire una singola simulazione con 12 client simulati:
+
+```bash
+flwr run . --stream --federation-config="num-supernodes=12"
+```
+
+Puoi passare più opzioni nella stessa stringa. Ad esempio:
+
+```bash
+flwr run . --stream --federation-config="num-supernodes=256 client-resources-num-cpus=1"
 ```
 
 I parametri passati con `--run-config`, come `num-server-rounds`, `local-epochs` o `batch-size`, continuano invece a sovrascrivere solo i valori definiti in `[tool.flwr.app.config]` nel `pyproject.toml`.
@@ -379,6 +393,14 @@ Per ogni round, in breve:
 6. il server aggrega le metriche di evaluation
 
 Il ciclo continua fino al numero di round impostato.
+
+### Interpretazione delle metriche
+
+Durante una run Flower compaiono metriche raccolte in momenti diversi del ciclo federato. Non vanno lette tutte nello stesso modo:
+
+- **Aggregated ClientApp-side Train Metrics**: misurano la capacità del modello di ridurre la loss durante il training locale sui dati di ciascun client, cioè sull'80% del dataset locale dopo lo split train/test. Sono utili per verificare la convergenza del training, ma non indicano da sole la capacità di generalizzazione.
+- **Aggregated ClientApp-side Evaluate Metrics**: misurano le performance del modello sui dati di validazione locali, cioè sul 20% del dataset locale del client. Servono per valutare la generalizzazione locale e possono evidenziare problemi come overfitting o distribuzioni sbilanciate tra client.
+- **ServerApp-side Evaluate Metrics**: misurano le performance del modello globale aggregato su un dataset di test centralizzato, comune a tutti i client. Sono le metriche più affidabili e comparabili per valutare la qualità complessiva del modello federato. Nel progetto quickstart vengono calcolate nella funzione `global_evaluate(server_round: int, arrays: ArrayRecord)`.
 
 ## 10. Esercizio opzionale
 
@@ -551,6 +573,31 @@ flwr run . --stream --run-config "num-server-rounds=5 local-epochs=2 fraction-tr
     flwr config list
     ```
 
+### Configurazione Simulation Runtime
+
+- **`flwr federation simulation-config`**
+    Imposta in modo permanente la configurazione di default della Simulation Runtime per il SuperLink locale.
+
+    ```bash
+    flwr federation simulation-config --num-supernodes 8
+    ```
+
+    Puoi anche configurare le risorse assegnate a ogni `ClientApp`:
+
+    ```bash
+    flwr federation simulation-config \
+        --num-supernodes 100 \
+        --client-resources-num-cpus 4 \
+        --client-resources-num-gpus 0.25
+    ```
+
+- **`flwr federation simulation-config --help`**
+    Mostra tutte le opzioni configurabili per la Simulation Runtime.
+
+    ```bash
+    flwr federation simulation-config --help
+    ```
+
 ### Esecuzione (Run)
 
 Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tuo codice sorgente (nello specifico, dove si trova il file `pyproject.toml`).
@@ -581,6 +628,19 @@ Il comando `run` deve essere sempre eseguito dalla cartella in cui risiede il tu
 
     ```bash
     flwr run . --run-config "learning-rate=0.01"
+    ```
+
+- **Override della Simulation Runtime per una sola run**
+    Se vuoi cambiare temporaneamente numero di SuperNodes o risorse dei client, usa `--federation-config`.
+
+    ```bash
+    flwr run . --stream --federation-config="num-supernodes=12"
+    ```
+
+    Puoi passare più opzioni nella stessa stringa:
+
+    ```bash
+    flwr run . --stream --federation-config="num-supernodes=256 client-resources-num-cpus=1"
     ```
 
 ### Monitoraggio (Status & Logs)
