@@ -83,27 +83,23 @@ def evaluate(model, dataloader, pos_weight, device):
 
 
 def summarize_history(history):
-    """Calculate average train_loss, val_loss, and val_f1 over all epochs.
+    """Calculate the final train_loss, val_loss, and val_f1 from the last epoch.
 
     Args:
         history (list of dict): Output from the train() function.
 
     Returns:
-        dict: A dictionary with average metrics.
+        dict: A dictionary with the final metrics.
     """
     if not history:
         raise ValueError("History is empty.")
 
-    num_epochs = len(history)
-
-    avg_train_loss = sum(epoch["train_loss"] for epoch in history) / num_epochs
-    avg_val_loss = sum(epoch["val_loss"] for epoch in history) / num_epochs
-    avg_val_f1 = sum(epoch["val_f1"] for epoch in history) / num_epochs
+    last_epoch = history[-1]
 
     return {
-        "avg_train_loss": avg_train_loss,
-        "avg_val_loss": avg_val_loss,
-        "avg_val_f1": avg_val_f1,
+        "avg_train_loss": last_epoch["train_loss"],
+        "avg_val_loss": last_epoch["val_loss"],
+        "avg_val_f1": last_epoch["val_f1"],
     }
 
 

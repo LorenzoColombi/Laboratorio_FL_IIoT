@@ -409,7 +409,7 @@ Durante una run Flower compaiono metriche raccolte in momenti diversi del ciclo 
 - aggiungere metriche custom lato client e lato server
 - passare dalla simulazione locale a un deployment distribuito
 
-## Esercizio 2: quickstart con Flower + PyTorch
+## Esercizio 2: Rilevamento Phishing
 
 In questo secondo esercizio applichiamo la stessa struttura del quickstart precedente a un caso leggermente più realistico: il progetto `fed-phish-guard`, che addestra un modello PyTorch per classificare URL di phishing in modo federato.
 Per eseguirlo più velocemente usiamo solo un 20% del dataset.
