@@ -15,7 +15,7 @@ L'obiettivo di questo laboratorio è costruire una piccola applicazione di Feder
 
 ### Obiettivo
 
-Alla fine avrai un sistema federato per il riconoscimento delle immagini composto da:
+Alla fine avremo un sistema federato per il riconoscimento delle immagini composto da:
 
 - un `ServerApp` che coordina l'addestramento
 - un `ClientApp` eseguito su più nodi o partizioni
@@ -43,7 +43,6 @@ source flwr-env/bin/activate
 
 ```bash
 pip install -U "flwr[simulation]"
-
 ```
 
 #### Installazione dipendenze progetto
@@ -163,7 +162,7 @@ I parametri di configurazione dell'app sono gestiti in modo centralizzato nel fi
 
 1. **Valori di default dell'app (`pyproject.toml`):** I parametri usati da `context.run_config` sono dichiarati nella sezione `[tool.flwr.app.config]`.
 2. **Configurazione della Simulation Runtime:** Il numero di client simulati si imposta con `flwr federation simulation-config --num-supernodes ...`.
-3. **Sovrascrittura da terminale:** Quando avvii un esperimento, puoi sovrascrivere i default dell'app dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
+3. **Sovrascrittura da terminale:** Quando avviamo un esperimento, possiamo sovrascrivere i default dell'app dinamicamente da riga di comando usando il flag `--run-config`, senza dover modificare il codice sorgente.
 
 ```bash
    flwr run . --run-config "num-server-rounds=20 batch-size=64"
@@ -252,11 +251,11 @@ def evaluate(msg: Message, context: Context):
 
 Nel `ServerApp`:
 
-1. leggi i parametri da `context.run_config`
-2. inizializzi il modello globale, `initial_arrays`
-3. configuri la strategia, `FedAvg`
-4. avvii `strategy.start(...)`
-5. salvi il modello finale su disco
+1. leggiamo i parametri da `context.run_config`
+2. inizializziamo il modello globale, `initial_arrays`
+3. configuriamo la strategia, `FedAvg`
+4. avviamo `strategy.start(...)`
+5. salviamo il modello finale su disco
 
 Configurazione usata in questo progetto:
 
@@ -321,7 +320,7 @@ flwr config list
 
 ### Configurazione permanente
 
-Per impostare in modo permanente il numero di client simulati, usa `flwr federation simulation-config`.
+Per impostare in modo permanente il numero di client simulati, usiamo `flwr federation simulation-config`.
 
 Ad esempio, per usare 8 SuperNodes, quindi 8 client simulati:
 
@@ -331,7 +330,7 @@ flwr federation simulation-config --num-supernodes 8
 
 Da quel momento, tutte le run successive useranno questa configurazione come default.
 
-Puoi configurare anche le risorse assegnate a ogni `ClientApp`. Ad esempio, per usare 100 SuperNodes, 4 CPU per client e il 25% di una GPU per client:
+Possiamo configurare anche le risorse assegnate a ogni `ClientApp`. Ad esempio, per usare 100 SuperNodes, 4 CPU per client e il 25% di una GPU per client:
 
 ```bash
 flwr federation simulation-config \
@@ -348,7 +347,7 @@ flwr federation simulation-config --help
 
 ### Override per singola run
 
-Se vuoi cambiare la configurazione solo per una run, usa `--federation-config` con `flwr run`.
+Se vogliamo cambiare la configurazione solo per una run, usiamo `--federation-config` con `flwr run`.
 
 Ad esempio, per eseguire una singola simulazione con 12 client simulati:
 
@@ -356,7 +355,7 @@ Ad esempio, per eseguire una singola simulazione con 12 client simulati:
 flwr run . --stream --federation-config="num-supernodes=12"
 ```
 
-Puoi passare più opzioni nella stessa stringa. Ad esempio:
+Possiamo passare più opzioni nella stessa stringa. Ad esempio:
 
 ```bash
 flwr run . --stream --federation-config="num-supernodes=256 client-resources-num-cpus=1"
@@ -366,13 +365,13 @@ I parametri passati con `--run-config`, come `num-server-rounds`, `local-epochs`
 
 ## 8. Avvio della simulazione
 
-Una volta attivato l'ambiente e raggiunta la cartella `quickstart-pytorch`, esegui:
+Una volta attivato l'ambiente e raggiunta la cartella `quickstart-pytorch`, eseguiamo:
 
 ```bash
 flwr run . --stream
 ```
 
-Vedrai i round federati con campionamento client, aggregazione del training, aggregazione della evaluation e metriche aggregate.
+Osserviamo i round federati con campionamento client, aggregazione del training, aggregazione della evaluation e metriche aggregate.
 
 Per modificare rapidamente la configurazione a runtime:
 
@@ -380,7 +379,7 @@ Per modificare rapidamente la configurazione a runtime:
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=3"
 ```
 
-Altrimenti modifica `pyproject.toml`. Per cambiare il numero di client simulati, usa la configurazione della Simulation Runtime descritta nella sezione successiva.
+Altrimenti modifichiamo `pyproject.toml`. Per cambiare il numero di client simulati, usiamo la configurazione della Simulation Runtime descritta nella sezione successiva.
 
 
 ## 9. Cosa succede dietro le quinte
@@ -532,22 +531,22 @@ Le funzioni di supporto `_load_model` e `_load_data` sono definite nello stesso 
 
 ### 4. Completamento ed esecuzione
 
-Prima di eseguire l'esercizio, copia i blocchi mostrati sopra nei TODO di `fed-phish-guard/phishguard/server_app.py` e `fed-phish-guard/phishguard/client_app.py`.
+Prima di eseguire l'esercizio, copiamo i blocchi mostrati sopra nei TODO di `fed-phish-guard/phishguard/server_app.py` e `fed-phish-guard/phishguard/client_app.py`.
 
-Poi installa le dipendenze del secondo progetto. Dalla root della repository:
+Poi installiamo le dipendenze del secondo progetto. Dalla root della repository:
 
 ```bash
 cd fed-phish-guard
 pip install -e .
 ```
 
-Infine avvia la simulazione:
+Infine avviamo la simulazione:
 
 ```bash
 flwr run . --stream
 ```
 
-Puoi modificare i parametri dell'esperimento al volo, ad esempio:
+Possiamo modificare i parametri dell'esperimento al volo, ad esempio:
 
 ```bash
 flwr run . --stream --run-config "num-server-rounds=5 local-epochs=2 fraction-train=0.75"
@@ -557,15 +556,15 @@ flwr run . --stream --run-config "num-server-rounds=5 local-epochs=2 fraction-tr
 
 Il progetto prevede già la possibilità di combinare due dataset diversi per arricchire i dati di addestramento e mostrare come aggregare fonti eterogenee. Il codice in `data.py` si occuperà in automatico di scaricare entrambi i dataset (uno in formato JSON e l'altro in formato standard HuggingFace) e di rimuovere gli URL duplicati.
 
-Per lanciare la simulazione unendo i dataset `ealvaradob/phishing-dataset` e `kmack/Phishing_urls`, puoi passare una lista separata da virgole nel `run-config`:
+Per lanciare la simulazione unendo i dataset `ealvaradob/phishing-dataset` e `kmack/Phishing_urls`, possiamo passare una lista separata da virgole nel `run-config`:
 
 ```bash
 flwr run . --stream --run-config "datasets='ealvaradob/phishing-dataset,kmack/Phishing_urls'"
 ```
 
-In alternativa, puoi impostare questo valore in modo permanente modificando direttamente il file `pyproject.toml` all'interno della cartella `fed-phish-guard`, aggiungendo o modificando la chiave `datasets` sotto la sezione `[tool.flwr.app.config]`.
+In alternativa, possiamo impostare questo valore in modo permanente modificando direttamente il file `pyproject.toml` all'interno della cartella `fed-phish-guard`, aggiungendo o modificando la chiave `datasets` sotto la sezione `[tool.flwr.app.config]`.
 
-**Ulteriore complicazione:** Come esercizio, si può provare a modificare il codice del `ClientApp` per assegnare un dataset specifico a un singolo clien per simulare un ambiente distribuito realistico. Possiamo fare questo sfruttando le informazioni presenti nel `context`.
+**Ulteriore complicazione:** Come esercizio, possiamo provare a modificare il codice del `ClientApp` per assegnare un dataset specifico a un singolo client e simulare un ambiente distribuito realistico. Possiamo fare questo sfruttando le informazioni presenti nel `context`.
 
 ### Riferimento ufficiale
 
