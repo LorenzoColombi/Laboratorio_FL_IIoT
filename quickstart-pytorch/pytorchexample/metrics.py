@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 
 
 def round_metric_value(key: str, value: MetricRecordValues) -> MetricRecordValues:
+    """Rounds a single metric value based on its key to improve readability.
+    Accuracy metrics are rounded to 2 decimals, others to 4 decimals.
+    """
     if isinstance(value, float):
         decimals = 2 if "acc" in key.lower() or "accuracy" in key.lower() else 4
         return round(value, decimals)
@@ -24,6 +27,9 @@ def round_metric_value(key: str, value: MetricRecordValues) -> MetricRecordValue
 
 
 def round_metric_record(metric_record: MetricRecord | None) -> MetricRecord | None:
+    """Rounds all numeric values within a given MetricRecord.
+    Returns None if the input record is None.
+    """
     if metric_record is None:
         return None
 
@@ -34,6 +40,9 @@ def round_metric_record(metric_record: MetricRecord | None) -> MetricRecord | No
 
 
 def format_metric_value(value: MetricRecordValues) -> str:
+    """Formats a metric value (float, int, or list) into a string representation.
+    Floats are formatted to 4 decimal places.
+    """
     if isinstance(value, float):
         return f"{value:.4f}"
     if isinstance(value, int):
@@ -105,6 +114,9 @@ def plot_metric_history(
     server_history: dict[int, MetricRecord] | None = None,
     server_metric_key: str | None = None,
 ) -> None:
+    """Plots the history of a specific metric over federated learning rounds.
+    It plots individual client metrics, aggregated client metrics, and server metrics.
+    """
     client_points: dict[int, list[tuple[int, float]]] = {}
     for server_round, metrics_by_client in sorted(client_history.items()):
         for client_id, metric_values in metrics_by_client.items():
@@ -156,6 +168,9 @@ def plot_metric_history(
 
 
 def save_metric_plots(strategy: TrackingFedAvg, result) -> None:
+    """Generates and saves standard plots for accuracy and loss metrics.
+    Plots are saved in the 'plots' directory.
+    """
     plots_dir = Path("plots")
     plots_dir.mkdir(exist_ok=True)
 

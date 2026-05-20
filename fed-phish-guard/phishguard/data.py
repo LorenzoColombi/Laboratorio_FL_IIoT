@@ -228,6 +228,8 @@ def create_dataloaders(
     # pin_memory only supported on CUDA, not MPS
     pin_memory = torch.cuda.is_available()
 
+    # Initialize the DataLoader for the training set.
+    # The pin_memory parameter helps speed up data transfer to the GPU (if available).
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -299,7 +301,8 @@ def preprocess_dataset(dataset: HFDataset, test_size: float = 0.1, val_size: flo
     if min(class_counts.values()) < 2:
         raise ValueError(f"Not enough samples per class after deduplication: {class_counts}")
 
-    # First split: train+val vs test
+    # First split: Separate out the test set (train+val vs test)
+    # This split is stratified to ensure proportional class distribution
     train_val_urls, test_urls, train_val_labels, test_labels = train_test_split(
         urls, labels, test_size=test_size, stratify=labels, random_state=seed
     )
