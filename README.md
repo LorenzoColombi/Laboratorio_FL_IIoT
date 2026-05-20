@@ -1,4 +1,4 @@
-# Laboratorio di Federated Learning per IIoT
+# Laboratorio di Federated Learning per il corso di IIoT
 
 README per il laboratorio di Federated Learning per IIoT del corso di Industrial Internet of Things (Università di Ferrara) a.a. 2025-2026. Questo README contiene 2 esercizi. Il primo è un quickstart molto guidato con Flower, PyTorch e CIFAR-10; il secondo applica la stessa struttura al progetto `fed-phish-guard` per il rilevamento federato di URL di phishing.
 
