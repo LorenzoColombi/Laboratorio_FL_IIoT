@@ -4,6 +4,10 @@ README per il laboratorio di Federated Learning per IIoT del corso di Industrial
 
 Entrambi gli esercizi mostrano la divisione tra `ServerApp`, `ClientApp`, configurazione dell'app e configurazione globale Flower.
 
+## NOTE
+
+- Flower al momento supporto Python fino alla versione 3.13
+
 ## Esercizio 1: quickstart con Flower + PyTorch
 
 L'obiettivo di questo laboratorio è costruire una piccola applicazione di Federated Learning con:
@@ -330,11 +334,11 @@ flwr federation simulation-config --num-supernodes 8
 
 Da quel momento, tutte le run successive useranno questa configurazione come default.
 
-Possiamo configurare anche le risorse assegnate a ogni `ClientApp`. Ad esempio, per usare 100 SuperNodes, 4 CPU per client e il 25% di una GPU per client:
+Possiamo configurare anche le risorse assegnate a ogni `ClientApp`. Ad esempio, per usare 4 SuperNodes, 4 CPU per client e il 25% di una GPU per client:
 
 ```bash
 flwr federation simulation-config \
-    --num-supernodes 100 \
+    --num-supernodes 4 \
     --client-resources-num-cpus 4 \
     --client-resources-num-gpus 0.25
 ```
